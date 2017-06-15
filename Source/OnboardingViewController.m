@@ -43,15 +43,15 @@ static NSString * const kSkipButtonText = @"Skip";
 
 + (instancetype)onboardWithBackgroundImage:(UIImage *)backgroundImage contents:(NSArray *)contents {
     return [[self alloc] initWithBackgroundImage:backgroundImage contents:contents];
- }
+}
 
 - (instancetype)initWithBackgroundImage:(UIImage *)backgroundImage contents:(NSArray *)contents {
     self = [self initWithContents:contents];
-
+    
     if (!self) {
         return nil;
     }
-
+    
     self.backgroundImage = backgroundImage;
     
     return self;
@@ -66,11 +66,11 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (instancetype)initWithBackgroundVideoURL:(NSURL *)backgroundVideoURL contents:(NSArray *)contents {
     self = [self initWithContents:contents];
-
+    
     if (!self) {
         return nil;
     }
-
+    
     self.videoURL = backgroundVideoURL;
     
     return self;
@@ -81,7 +81,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (instancetype)initWithContents:(NSArray *)contents {
     self = [super init];
-
+    
     if (!self) {
         return nil;
     }
@@ -104,7 +104,7 @@ static NSString * const kSkipButtonText = @"Skip";
     self.pageControl = [UIPageControl new];
     self.pageControl.numberOfPages = self.viewControllers.count;
     self.pageControl.userInteractionEnabled = NO;
-
+    
     self.skipButton = [UIButton new];
     [self.skipButton setTitle:kSkipButtonText forState:UIControlStateNormal];
     [self.skipButton addTarget:self action:@selector(handleSkipButtonPressed) forControlEvents:UIControlEventTouchUpInside];
@@ -118,7 +118,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAppEnteredForeground) name:UIApplicationDidBecomeActiveNotification object:nil];
     
     // now that the view has loaded, we can generate the content
@@ -136,7 +136,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-
+    
     if ((self.player.rate != 0.0) && !self.player.error && self.stopMoviePlayerWhenDisappear) {
         [self.player pause];
     }
@@ -144,7 +144,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-
+    
     self.pageVC.view.frame = self.view.frame;
     self.moviePlayerController.view.frame = self.view.frame;
     self.skipButton.frame = CGRectMake(CGRectGetMaxX(self.view.frame) - kSkipButtonWidth, CGRectGetMaxY(self.view.frame) - self.underPageControlPadding - kSkipButtonHeight, kSkipButtonWidth, kSkipButtonHeight);
@@ -182,13 +182,13 @@ static NSString * const kSkipButtonText = @"Skip";
         backgroundMaskView.backgroundColor = [UIColor colorWithWhite:0.0 alpha:kBackgroundMaskAlpha];
         [self.pageVC.view addSubview:backgroundMaskView];
     }
-
+    
     // set ourself as the delegate on all of the content views, to handle fading
     // and auto-navigation
     for (OnboardingContentViewController *contentVC in self.viewControllers) {
         contentVC.delegate = self;
     }
-
+    
     // set the initial current page as the first page provided
     _currentPage = [self.viewControllers firstObject];
     
@@ -208,7 +208,7 @@ static NSString * const kSkipButtonText = @"Skip";
     // otherwise send the video view to the back if we have one
     else if (self.videoURL) {
         self.player = [[AVPlayer alloc] initWithURL:self.videoURL];
-
+        
         self.moviePlayerController = [AVPlayerViewController new];
         self.moviePlayerController.player = self.player;
         self.moviePlayerController.showsPlaybackControls = NO;
@@ -259,7 +259,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (void)setUnderPageControlPadding:(CGFloat)underPageControlPadding {
     _underPageControlPadding = underPageControlPadding;
-
+    
     for (OnboardingContentViewController *contentVC in self.viewControllers) {
         contentVC.underPageControlPadding = underPageControlPadding;
     }
@@ -327,48 +327,9 @@ static NSString * const kSkipButtonText = @"Skip";
 #pragma mark - Page scroll status
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    // calculate the percent complete of the transition of the current page given the
-    // scrollview's offset and the width of the screen
-    CGFloat percentComplete = fabs(scrollView.contentOffset.x - self.view.frame.size.width) / self.view.frame.size.width;
-    CGFloat percentCompleteInverse = 1.0 - percentComplete;
-    
-    // these cases have some funky results given the way this method is called, like stuff
-    // just disappearing, so we want to do nothing in these cases
-    if (percentComplete == 0) {
-        return;
-    }
-
-    // set the next page's alpha to be the percent complete, so if we're 90% of the way
-    // scrolling towards the next page, its content's alpha should be 90%
-    [_upcomingPage updateAlphas:percentComplete];
-    
-    // set the current page's alpha to the difference between 100% and this percent value,
-    // so we're 90% scrolling towards the next page, the current content's alpha sshould be 10%
-    [_currentPage updateAlphas:percentCompleteInverse];
-
-    // determine if we're transitioning to or from our last page
-    BOOL transitioningToLastPage = (_currentPage != self.viewControllers.lastObject && _upcomingPage == self.viewControllers.lastObject);
-    BOOL transitioningFromLastPage = (_currentPage == self.viewControllers.lastObject) && (_upcomingPage == self.viewControllers[self.viewControllers.count - 2]);
-    
-    // fade the page control to and from the last page
-    if (self.fadePageControlOnLastPage) {
-        if (transitioningToLastPage) {
-            self.pageControl.alpha = percentCompleteInverse;
-        }
-
-        else if (transitioningFromLastPage) {
-            self.pageControl.alpha = percentComplete;
-        }
-    }
-
-    // fade the skip button to and from the last page
-    if (self.fadeSkipButtonOnLastPage) {
-        if (transitioningToLastPage) {
-            self.skipButton.alpha = percentCompleteInverse;
-        }
-
-        else if (transitioningFromLastPage) {
-            self.skipButton.alpha = percentComplete;
+    if ((self.pageControl.currentPage == (self.pageControl.numberOfPages - 1 )) && (fabs(scrollView.contentOffset.x - self.view.frame.size.width) / self.view.frame.size.width) > 0.15 ){
+        if (self.skipHandler) {
+            self.skipHandler();
         }
     }
 }
