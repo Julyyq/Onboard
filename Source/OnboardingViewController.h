@@ -59,6 +59,11 @@
  */
 @property (nonatomic) BOOL allowSkipping;
 
+/**
+ * @brief 是否允许滑动最后一页跳过
+ */
+@property (nonatomic) BOOL allowSwipeSkipping;
+
 
 /**
  * @brief A block that will be executed when the skip button is pressed.

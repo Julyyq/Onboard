@@ -328,7 +328,7 @@ static NSString * const kSkipButtonText = @"Skip";
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if ((self.pageControl.currentPage == (self.pageControl.numberOfPages - 1 )) && (fabs(scrollView.contentOffset.x - self.view.frame.size.width) / self.view.frame.size.width) > 0.15 ){
-        if (self.skipHandler) {
+        if (self.skipHandler && self.allowSwipeSkipping) {
             self.skipHandler();
         }
     }
